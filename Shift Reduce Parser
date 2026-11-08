@@ -1,0 +1,44 @@
+#include <stdio.h>
+#include <string.h>
+
+char *g[]={"E->E+E","E->E*E","E->E-E","E->E/E","E->(E)","E->i"};
+char s[100],in[100];
+
+void reduce(int p) {
+    int f=1;
+    while(f) {
+        f=0;
+        for(int r=0;r<6;r++) {
+            char *rhs=g[r]+3;
+            int n=strlen(s),m=strlen(rhs);
+            if(n>=m && !strcmp(s+n-m,rhs)) {
+                s[n-m]='E';
+                s[n-m+1]='\0';
+                printf("$%-19s %-15s REDUCE\n",s,in+p);
+                f=1;
+                break;
+            }
+        }
+    }
+}
+
+int main() {
+    printf("Enter input: ");
+    scanf("%s",in);
+
+    for(int i=0;in[i];i++) {
+        int n=strlen(s);
+        s[n]=in[i];
+        s[n+1]='\0';
+
+        printf("$%-19s %-15s SHIFT\n",s,in+i+1);
+        reduce(i+1);
+    }
+
+    if(!strcmp(s,"E"))
+        printf("$E                  $               ACCEPT\n");
+    else
+        printf("$%-19s $               REJECT\n",s);
+
+    return 0;
+}
