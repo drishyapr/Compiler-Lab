@@ -1,0 +1,49 @@
+#include <stdio.h>
+#include <string.h>
+
+char s[100];
+int p=0, t=1;
+
+void E(char *);
+
+void F(char *r) {
+    if(s[p]=='(') {
+        p++;
+        E(r);
+        p++;
+    }
+    else sprintf(r,"%c",s[p++]);
+}
+
+void T(char *r) {
+    char l[10], x[10], op;
+    F(l);
+    while(s[p]=='*'||s[p]=='/') {
+        op=s[p++];
+        F(x);
+        printf("t%d = %s %c %s\n",t,l,op,x);
+        sprintf(l,"t%d",t++);
+    }
+    strcpy(r,l);
+}
+
+void E(char *r) {
+    char l[10], x[10], op;
+    T(l);
+    while(s[p]=='+'||s[p]=='-') {
+        op=s[p++];
+        T(x);
+        printf("t%d = %s %c %s\n",t,l,op,x);
+        sprintf(l,"t%d",t++);
+    }
+    strcpy(r,l);
+}
+
+int main() {
+    char r[10];
+    printf("Enter expression: ");
+    scanf("%s",s);
+    E(r);
+    printf("Result = %s\n",r);
+    return 0;
+}
