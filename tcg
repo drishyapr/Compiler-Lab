@@ -1,0 +1,57 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+char tac[50][100], v[50][20];
+int n, c=0;
+
+void add(char *s) {
+    int i;
+    if (!isalpha(s[0]) || !strcmp(s,"IF") || !strcmp(s,"GOTO")) return;
+    for(i=0;i<c;i++) if(!strcmp(v[i],s)) return;
+    strcpy(v[c++],s);
+}
+
+int main() {
+    int i;
+    char l[20],a[20],b[20],op;
+
+    printf("Enter number of statements: ");
+    scanf("%d",&n);
+    getchar();
+
+    for(i=0;i<n;i++) {
+        fgets(tac[i],100,stdin);
+        tac[i][strcspn(tac[i],"\n")]=0;
+        sscanf(tac[i],"%19[^=]=%19[^+*/-]%c%19s",l,a,&op,b);
+        add(l); add(a); add(b);
+    }
+
+    printf("\n.MODEL SMALL\n.STACK 100H\n.DATA\n");
+    for(i=0;i<c;i++) printf("%s DW ?\n",v[i]);
+
+    printf("\n.CODE\nMAIN PROC\nMOV AX,@DATA\nMOV DS,AX\n");
+
+    for(i=0;i<n;i++) {
+        char s[100];
+        strcpy(s,tac[i]);
+        s[strcspn(s," ")]=0;
+
+        if(strchr(s,':')) printf("%s\n",s);
+        else if(sscanf(s,"GOTO%19s",l)==1)
+            printf("JMP %s\n",l);
+        else if(sscanf(s,"%19[^=]=%19[^+*/-]%c%19s",l,a,&op,b)==4) {
+            printf("MOV AX,%s\n",a);
+            if(op=='+') printf("ADD AX,%s\n",b);
+            if(op=='-') printf("SUB AX,%s\n",b);
+            if(op=='*') printf("MOV BX,%s\nMUL BX\n");
+            if(op=='/') printf("MOV BX,%s\nXOR DX,DX\nDIV BX\n",b);
+            printf("MOV %s,AX\n",l);
+        }
+        else if(sscanf(s,"%19[^=]=%19s",l,a)==2)
+            printf("MOV AX,%s\nMOV %s,AX\n",a,l);
+    }
+
+    printf("MOV AH,4CH\nINT 21H\nMAIN ENDP\nEND MAIN\n");
+    return 0;
+}
