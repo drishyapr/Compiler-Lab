@@ -1,0 +1,99 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
+
+/* Anonymous struct array for easy symbol table lookup */
+struct {
+    char name[32];
+    int val;
+    int is_c;
+} vars[50];
+int v_cnt = 0;
+
+/* Helper 1: Linear search for variable index */
+int find(char *s) {
+    for (int i = 0; i < v_cnt; i++)
+        if (strcmp(vars[i].name, s) == 0) return i;
+    return -1;
+}
+
+/* Helper 2: Check if string 's' is an integer constant or a known constant variable */
+int eval(char *s, int *v) {
+    if (isdigit((unsigned char)s[0])) { 
+        *v = atoi(s); 
+        return 1; 
+    }
+    int idx = find(s);
+    if (idx != -1 && vars[idx].is_c) { 
+        *v = vars[idx].val; 
+        return 1; 
+    }
+    return 0;
+}
+
+/* Helper 3: Add new variable or update existing one */
+void set_var(char *name, int v, int cst) {
+    int idx = find(name);
+    if (idx == -1) { 
+        idx = v_cnt++; 
+        strcpy(vars[idx].name, name); 
+    }
+    vars[idx].val = v;
+    vars[idx].is_c = cst;
+}
+
+int main() {
+    int n;
+    char line[100], clean[100];
+
+    printf("Enter number of statements: ");
+    if (scanf("%d", &n) != 1) return 0;
+    getchar();
+
+    printf("Enter statements:\n");
+    for (int i = 0; i < n; i++) {
+        fgets(line, sizeof(line), stdin);
+
+        /* Remove spaces and newlines */
+        int k = 0;
+        for (int j = 0; line[j]; j++)
+            if (!isspace((unsigned char)line[j])) clean[k++] = line[j];
+        clean[k] = '\0';
+
+        char lhs[32], x[32], y[32], op;
+        int num, a, b, res = 0;
+
+        /* Case 1: Binary Expression (e.g., c=a+b, val2=x*10) */
+        if (sscanf(clean, "%[a-zA-Z0-9]=%[a-zA-Z0-9]%c%[a-zA-Z0-9]", lhs, x, &op, y) == 4) {
+            if (eval(x, &a) && eval(y, &b)) {
+                int valid = 1;
+                if (op == '+') res = a + b;
+                else if (op == '-') res = a - b;
+                else if (op == '*') res = a * b;
+                else if (op == '/' && b != 0) res = a / b;
+                else valid = 0;
+                set_var(lhs, res, valid);
+            } else {
+                set_var(lhs, 0, 0);
+            }
+        }
+        /* Case 2: Direct Number Assignment (e.g., a=10) */
+        else if (sscanf(clean, "%[a-zA-Z0-9]=%d", lhs, &num) == 2) {
+            set_var(lhs, num, 1);
+        }
+        /* Case 3: Variable Copy (e.g., b=a) */
+        else if (sscanf(clean, "%[a-zA-Z0-9]=%[a-zA-Z0-9]", lhs, x) == 2) {
+            int idx = find(x);
+            if (idx != -1) set_var(lhs, vars[idx].val, vars[idx].is_c);
+            else set_var(lhs, 0, 0);
+        }
+    }
+
+    printf("\nAfter Constant Propagation:\n");
+    for (int i = 0; i < v_cnt; i++) {
+        if (vars[i].is_c)
+            printf("%s=%d\n", vars[i].name, vars[i].val);
+    }
+    return 0;
+}
