@@ -1,0 +1,35 @@
+#include <stdio.h>
+#include <string.h>
+
+int n, t, eps[20][20], vis[20];
+
+void dfs(int u) {
+    vis[u] = 1;
+    for (int v = 0; v < n; v++)
+        if (eps[u][v] && !vis[v]) dfs(v);
+}
+
+int main() {
+    printf("Enter number of states & transitions: ");
+    scanf("%d %d", &n, &t);
+
+    printf("Enter transitions (e.g. q0#q1):\n");
+    for (int i = 0; i < t; i++) {
+        char s[20], sym;
+        int u, v;
+        scanf("%s", s);
+        if (sscanf(s, "q%d%c%d", &u, &sym, &v) == 3 && sym == '#')
+            eps[u][v] = 1;
+    }
+
+    printf("\nEpsilon Closures:\n");
+    for (int i = 0; i < n; i++) {
+        memset(vis, 0, sizeof(vis));
+        dfs(i);
+        printf("e-closure(q%d) = { ", i);
+        for (int j = 0; j < n; j++)
+            if (vis[j]) printf("q%d ", j);
+        printf("}\n");
+    }
+    return 0;
+}
