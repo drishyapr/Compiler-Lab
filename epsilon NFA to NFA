@@ -1,0 +1,82 @@
+#include <stdio.h>
+
+int main() {
+    int n, t, i, j, k, u, v, s;
+    int closure[20][20] = {0}, trans[20][20][20] = {0}, new_trans[20][20][20] = {0};
+    char syms[20], in[10];
+    int sym_cnt = 0;
+
+    printf("Enter number of states: ");
+    scanf("%d", &n);
+    printf("Enter total number of transitions: ");
+    scanf("%d", &t);
+
+    printf("\nEnter transitions (example: q0#q1 or q0aq1):\n");
+    for (i = 0; i < t; i++) {
+        scanf("%s", in);
+        u = in[1] - '0';
+        v = in[4] - '0';
+        char symbol = in[2];
+
+        if (symbol == '#')
+            closure[u][v] = 1; /* Epsilon transition */
+        else {
+            /* Find or add symbol index */
+            int found = -1;
+            for (j = 0; j < sym_cnt; j++)
+                if (syms[j] == symbol) found = j;
+            if (found == -1) { 
+                syms[sym_cnt] = symbol; 
+                found = sym_cnt++; 
+            }
+            trans[u][v][found] = 1;
+        }
+    }
+
+    /* Step 1: Compute Epsilon-Closure using Floyd-Warshall */
+    for (i = 0; i < n; i++) 
+        closure[i][i] = 1;
+    
+    for (k = 0; k < n; k++)
+        for (i = 0; i < n; i++)
+            for (j = 0; j < n; j++)
+                closure[i][j] |= (closure[i][k] && closure[k][j]);
+
+    /* Print Epsilon-Closures */
+    printf("\nEpsilon Closures:\n");
+    for (i = 0; i < n; i++) {
+        printf("E-closure(q%d) = { ", i);
+        for (j = 0; j < n; j++)
+            if (closure[i][j]) printf("q%d ", j);
+        printf("}\n");
+    }
+
+    /* Step 2: Compute New NFA Transitions: closure[i][u] -> trans[u][v][s] -> closure[v][j] */
+    for (i = 0; i < n; i++)
+        for (j = 0; j < n; j++)
+            for (s = 0; s < sym_cnt; s++)
+                for (u = 0; u < n; u++)
+                    for (v = 0; v < n; v++)
+                        if (closure[i][u] && trans[u][v][s] && closure[v][j])
+                            new_trans[i][j][s] = 1;
+
+    /* Print NFA without epsilon */
+    printf("\nNFA without epsilon transitions:\n");
+    for (i = 0; i < n; i++) {
+        for (s = 0; s < sym_cnt; s++) {
+            printf("q%d --%c--> { ", i, syms[s]);
+            for (j = 0; j < n; j++)
+                if (new_trans[i][j][s]) printf("q%d ", j);
+            printf("}\n");
+        }
+    }
+    return 0;
+}
+
+// 3
+// 5
+// q0#q1
+// q1#q2
+// q0aq0
+// q1bq1
+// q2aq2
